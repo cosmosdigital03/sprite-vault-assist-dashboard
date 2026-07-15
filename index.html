@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#12051f" />
+  <meta name="description" content="Clasificación oficial de Assist de Sprite Vault." />
+  <title>Sprite Vault · Assist Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="background-orb orb-one" aria-hidden="true"></div>
+  <div class="background-orb orb-two" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Sprite Vault Assist Dashboard">
+      <span class="brand-mark" aria-hidden="true">✦</span>
+      <span>
+        <strong>Sprite Vault</strong>
+        <small>Assist Dashboard</small>
+      </span>
+    </a>
+
+    <nav class="header-actions" aria-label="Acciones principales">
+      <button id="refreshButton" class="icon-button" type="button" title="Actualizar datos" aria-label="Actualizar datos">↻</button>
+      <a id="discordButton" class="primary-button" href="#" target="_blank" rel="noreferrer">Unirse al Discord</a>
+    </nav>
+  </header>
+
+  <main id="top" class="page-shell">
+    <section class="hero" aria-labelledby="pageTitle">
+      <div class="hero-copy">
+        <span class="eyebrow">RECONOCIMIENTO DE LA COMUNIDAD</span>
+        <h1 id="pageTitle">Cada ayuda fortalece la Bóveda.</h1>
+        <p>
+          Consulta quiénes están ayudando más a Sprite Vault mediante regalos de Sprites,
+          apoyo al indexar e intercambios completados de forma segura.
+        </p>
+        <div class="hero-actions">
+          <a class="primary-button large" href="#clasificacion">Ver clasificación</a>
+          <button id="openMyProgress" class="secondary-button large" type="button">Buscar mi progreso</button>
+        </div>
+      </div>
+
+      <div class="vault-card" aria-label="Estado del sistema">
+        <div class="vault-ring">
+          <span class="vault-core">✦</span>
+        </div>
+        <div>
+          <span class="status-dot"></span>
+          <strong id="systemStatus">Modo demostración</strong>
+          <p id="lastUpdated">Cargando datos…</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats-grid" aria-label="Estadísticas de Assist">
+      <article class="stat-card">
+        <span class="stat-icon" aria-hidden="true">⭐</span>
+        <div>
+          <small>Assists acumulados</small>
+          <strong id="totalAssists">—</strong>
+          <span>Ayuda reconocida</span>
+        </div>
+      </article>
+      <article class="stat-card">
+        <span class="stat-icon" aria-hidden="true">🛡️</span>
+        <div>
+          <small>Miembros con Assist</small>
+          <strong id="activeHelpers">—</strong>
+          <span>Contribuyentes registrados</span>
+        </div>
+      </article>
+      <article class="stat-card">
+        <span class="stat-icon" aria-hidden="true">🔥</span>
+        <div>
+          <small>Assists esta semana</small>
+          <strong id="weeklyAssists">—</strong>
+          <span>Actividad reciente</span>
+        </div>
+      </article>
+      <article class="stat-card highlight">
+        <span class="stat-icon" aria-hidden="true">🏆</span>
+        <div>
+          <small>Ayudante destacado</small>
+          <strong id="topHelper">—</strong>
+          <span id="topHelperPoints">—</span>
+        </div>
+      </article>
+    </section>
+
+    <section id="clasificacion" class="dashboard-grid">
+      <div class="leaderboard-panel panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">CLASIFICACIÓN GENERAL</span>
+            <h2>Top de la Bóveda</h2>
+          </div>
+          <div class="search-wrap">
+            <span aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="Buscar miembro…" autocomplete="off" aria-label="Buscar miembro" />
+          </div>
+        </div>
+
+        <div id="podium" class="podium" aria-label="Los tres mejores miembros"></div>
+
+        <div class="table-header" aria-hidden="true">
+          <span>Posición</span>
+          <span>Miembro</span>
+          <span>Rol</span>
+          <span>Assists</span>
+        </div>
+        <div id="leaderboardList" class="leaderboard-list" aria-live="polite"></div>
+        <div id="emptyState" class="empty-state" hidden>
+          <span>⌕</span>
+          <strong>No encontramos ese miembro.</strong>
+          <p>Prueba con otro nombre o usuario de Discord.</p>
+        </div>
+      </div>
+
+      <aside class="sidebar-stack">
+        <section class="panel activity-panel">
+          <div class="panel-header compact">
+            <div>
+              <span class="eyebrow">ACTIVIDAD RECIENTE</span>
+              <h2>Últimos Assists</h2>
+            </div>
+          </div>
+          <div id="activityList" class="activity-list"></div>
+        </section>
+
+        <section class="panel contribution-panel">
+          <div class="panel-header compact">
+            <div>
+              <span class="eyebrow">FORMAS DE CONTRIBUIR</span>
+              <h2>Ayuda que cuenta</h2>
+            </div>
+          </div>
+          <ul class="contribution-list">
+            <li><span>🎁</span><div><strong>Regalar un Sprite</strong><small>Ayudar sin pedir dinero ni V-Bucks.</small></div></li>
+            <li><span>📁</span><div><strong>Ayudar a indexar</strong><small>Facilitar el registro y la organización.</small></div></li>
+            <li><span>🤝</span><div><strong>Intercambio seguro</strong><small>Completar un intercambio justo y limpio.</small></div></li>
+          </ul>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>
+      <strong>Sprite Vault</strong>
+      <span>La ayuda real merece reconocimiento.</span>
+    </div>
+    <span id="footerYear"></span>
+  </footer>
+
+  <dialog id="memberDialog" class="member-dialog">
+    <form method="dialog" class="dialog-card">
+      <button class="dialog-close" value="close" aria-label="Cerrar">×</button>
+      <span class="eyebrow">PERFIL DE ASSIST</span>
+      <div id="dialogProfile"></div>
+    </form>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
