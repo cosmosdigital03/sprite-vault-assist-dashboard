@@ -1,13 +1,9 @@
 window.SPRITE_VAULT_CONFIG = {
-  // Deja estos valores vacíos para usar los datos de demostración.
-  // Completa ambos valores para conectar el panel con Supabase.
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_URL: "https://vaxwnrhspjjbsdxgzeqr.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_J2ehJ9XLxh98LrbB-za-Cg_G8F3eTas",
 
-  // Pega aquí el enlace permanente de invitación de Sprite Vault.
-  DISCORD_INVITE_URL: "https://discord.com/",
+  DISCORD_INVITE_URL: "https://discord.gg/x8jVpZvMV",
 
-  // Cantidad máxima de miembros y actividad reciente que se muestran.
   LEADERBOARD_LIMIT: 100,
   RECENT_ACTIVITY_LIMIT: 8
 };
