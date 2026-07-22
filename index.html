@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#12051f" />
+  <meta name="theme-color" content="#090612" />
   <meta name="description" content="Clasificación oficial de Assist de Sprite Vault." />
   <title>Sprite Vault · Assist Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div class="background-grid" aria-hidden="true"></div>
   <div class="background-orb orb-one" aria-hidden="true"></div>
   <div class="background-orb orb-two" aria-hidden="true"></div>
 
@@ -17,75 +18,86 @@
       <span class="brand-mark" aria-hidden="true">✦</span>
       <span>
         <strong>Sprite Vault</strong>
-        <small>Assist Dashboard</small>
+        <small>Community Assist</small>
       </span>
     </a>
 
     <nav class="header-actions" aria-label="Acciones principales">
+      <span class="live-pill"><span class="status-dot"></span>En vivo</span>
       <button id="refreshButton" class="icon-button" type="button" title="Actualizar datos" aria-label="Actualizar datos">↻</button>
-      <a id="discordButton" class="primary-button" href="#" target="_blank" rel="noreferrer">Unirse al Discord</a>
+      <a id="discordButton" class="primary-button" href="#" target="_blank" rel="noreferrer">Entrar al Discord</a>
     </nav>
   </header>
 
   <main id="top" class="page-shell">
     <section class="hero" aria-labelledby="pageTitle">
       <div class="hero-copy">
-        <span class="eyebrow">RECONOCIMIENTO DE LA COMUNIDAD</span>
-        <h1 id="pageTitle">Cada ayuda fortalece la Bóveda.</h1>
+        <span class="eyebrow"><span></span> RECONOCIMIENTO DE LA COMUNIDAD</span>
+        <h1 id="pageTitle">La ayuda que mueve <em>la Bóveda.</em></h1>
         <p>
-          Consulta quiénes están ayudando más a Sprite Vault mediante regalos de Sprites,
-          apoyo al indexar e intercambios completados de forma segura.
+          El ranking oficial de quienes regalan Sprites, ayudan a indexar y hacen posible
+          una comunidad de intercambios más segura.
         </p>
         <div class="hero-actions">
-          <a class="primary-button large" href="#clasificacion">Ver clasificación</a>
-          <button id="openMyProgress" class="secondary-button large" type="button">Buscar mi progreso</button>
+          <a class="primary-button large" href="#clasificacion">Explorar clasificación <span aria-hidden="true">↓</span></a>
+          <button id="openMyProgress" class="secondary-button large" type="button">Buscar mi perfil</button>
+        </div>
+        <div class="hero-trust">
+          <span>✓ Sin dinero real</span>
+          <span>✓ Sin V-Bucks</span>
+          <span>✓ Ayuda verificada</span>
         </div>
       </div>
 
       <div class="vault-card" aria-label="Estado del sistema">
-        <div class="vault-ring">
-          <span class="vault-core">✦</span>
+        <div class="vault-card-top">
+          <span class="vault-label">VAULT NETWORK</span>
+          <span class="signal-bars" aria-hidden="true"><i></i><i></i><i></i></span>
         </div>
-        <div>
+        <div class="vault-visual">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="vault-ring"><span class="vault-core">✦</span></div>
+        </div>
+        <div class="vault-status">
           <span class="status-dot"></span>
-          <strong id="systemStatus">Modo demostración</strong>
-          <p id="lastUpdated">Cargando datos…</p>
+          <div>
+            <strong id="systemStatus">Modo demostración</strong>
+            <p id="lastUpdated">Cargando datos…</p>
+          </div>
         </div>
       </div>
     </section>
 
+    <section class="section-intro" aria-label="Resumen">
+      <div><span class="eyebrow"><span></span> RESUMEN</span><h2>Estado de la comunidad</h2></div>
+      <p>Métricas actualizadas de contribución y reconocimiento.</p>
+    </section>
+
     <section class="stats-grid" aria-label="Estadísticas de Assist">
       <article class="stat-card">
-        <span class="stat-icon" aria-hidden="true">⭐</span>
-        <div>
-          <small>Assists acumulados</small>
-          <strong id="totalAssists">—</strong>
-          <span>Ayuda reconocida</span>
-        </div>
+        <div class="stat-top"><span class="stat-icon" aria-hidden="true">✦</span><span class="trend">TOTAL</span></div>
+        <small>Assists acumulados</small>
+        <strong id="totalAssists">—</strong>
+        <span>Ayuda reconocida históricamente</span>
       </article>
       <article class="stat-card">
-        <span class="stat-icon" aria-hidden="true">🛡️</span>
-        <div>
-          <small>Miembros con Assist</small>
-          <strong id="activeHelpers">—</strong>
-          <span>Contribuyentes registrados</span>
-        </div>
+        <div class="stat-top"><span class="stat-icon" aria-hidden="true">♟</span><span class="trend">MIEMBROS</span></div>
+        <small>Contribuyentes</small>
+        <strong id="activeHelpers">—</strong>
+        <span>Miembros con Assist registrado</span>
       </article>
       <article class="stat-card">
-        <span class="stat-icon" aria-hidden="true">🔥</span>
-        <div>
-          <small>Assists esta semana</small>
-          <strong id="weeklyAssists">—</strong>
-          <span>Actividad reciente</span>
-        </div>
+        <div class="stat-top"><span class="stat-icon" aria-hidden="true">↗</span><span class="trend positive">7 DÍAS</span></div>
+        <small>Actividad semanal</small>
+        <strong id="weeklyAssists">—</strong>
+        <span>Assists durante esta semana</span>
       </article>
       <article class="stat-card highlight">
-        <span class="stat-icon" aria-hidden="true">🏆</span>
-        <div>
-          <small>Ayudante destacado</small>
-          <strong id="topHelper">—</strong>
-          <span id="topHelperPoints">—</span>
-        </div>
+        <div class="stat-top"><span class="stat-icon crown" aria-hidden="true">♛</span><span class="trend gold">LÍDER</span></div>
+        <small>Ayudante destacado</small>
+        <strong id="topHelper">—</strong>
+        <span id="topHelperPoints">—</span>
       </article>
     </section>
 
@@ -93,8 +105,9 @@
       <div class="leaderboard-panel panel">
         <div class="panel-header">
           <div>
-            <span class="eyebrow">CLASIFICACIÓN GENERAL</span>
+            <span class="eyebrow"><span></span> CLASIFICACIÓN GENERAL</span>
             <h2>Top de la Bóveda</h2>
+            <p>Selecciona un miembro para ver su perfil.</p>
           </div>
           <div class="search-wrap">
             <span aria-hidden="true">⌕</span>
@@ -122,9 +135,10 @@
         <section class="panel activity-panel">
           <div class="panel-header compact">
             <div>
-              <span class="eyebrow">ACTIVIDAD RECIENTE</span>
+              <span class="eyebrow"><span></span> ACTIVIDAD RECIENTE</span>
               <h2>Últimos Assists</h2>
             </div>
+            <span class="pulse-label"><i></i> LIVE</span>
           </div>
           <div id="activityList" class="activity-list"></div>
         </section>
@@ -132,32 +146,30 @@
         <section class="panel contribution-panel">
           <div class="panel-header compact">
             <div>
-              <span class="eyebrow">FORMAS DE CONTRIBUIR</span>
+              <span class="eyebrow"><span></span> CÓMO SUBIR</span>
               <h2>Ayuda que cuenta</h2>
             </div>
           </div>
           <ul class="contribution-list">
-            <li><span>🎁</span><div><strong>Regalar un Sprite</strong><small>Ayudar sin pedir dinero ni V-Bucks.</small></div></li>
-            <li><span>📁</span><div><strong>Ayudar a indexar</strong><small>Facilitar el registro y la organización.</small></div></li>
-            <li><span>🤝</span><div><strong>Intercambio seguro</strong><small>Completar un intercambio justo y limpio.</small></div></li>
+            <li><span>🎁</span><div><strong>Regalar un Sprite</strong><small>Ayuda a alguien sin pedir dinero ni V-Bucks.</small></div></li>
+            <li><span>📁</span><div><strong>Ayudar a indexar</strong><small>Facilita el registro y organización de Sprites.</small></div></li>
+            <li><span>🤝</span><div><strong>Intercambio seguro</strong><small>Completa intercambios justos y transparentes.</small></div></li>
           </ul>
+          <a class="contribution-cta" href="#top">Conoce Sprite Vault <span>→</span></a>
         </section>
       </aside>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div>
-      <strong>Sprite Vault</strong>
-      <span>La ayuda real merece reconocimiento.</span>
-    </div>
+    <div><strong>Sprite Vault</strong><span>La ayuda real merece reconocimiento.</span></div>
     <span id="footerYear"></span>
   </footer>
 
   <dialog id="memberDialog" class="member-dialog">
     <form method="dialog" class="dialog-card">
       <button class="dialog-close" value="close" aria-label="Cerrar">×</button>
-      <span class="eyebrow">PERFIL DE ASSIST</span>
+      <span class="eyebrow"><span></span> PERFIL DE ASSIST</span>
       <div id="dialogProfile"></div>
     </form>
   </dialog>
