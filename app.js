@@ -17,14 +17,27 @@ const demoEvents = [
   { id: 3, helper_id: "1002", helper_name: "Luna", giver_name: "Carlos", reason: "index_help", created_at: isoHoursAgo(17) },
   { id: 4, helper_id: "1003", helper_name: "Nova", giver_name: "Sofi", reason: "gifted_sprite", created_at: isoDaysAgo(2) },
   { id: 5, helper_id: "1006", helper_name: "Sofi", giver_name: "Rafa", reason: "safe_exchange", created_at: isoDaysAgo(3) },
-  { id: 6, helper_id: "1005", helper_name: "Carlos", giver_name: "Maya", reason: "index_help", created_at: isoDaysAgo(4) }
+  { id: 6, helper_id: "1005", helper_name: "Carlos", giver_name: "Maya", reason: "index_help", created_at: isoDaysAgo(4) },
+  { id: 7, helper_id: "1001", helper_name: "John", giver_name: "Nico", reason: "gifted_sprite", created_at: isoDaysAgo(1) },
+  { id: 8, helper_id: "1001", helper_name: "John", giver_name: "Rafa", reason: "index_help", created_at: isoDaysAgo(5) },
+  { id: 9, helper_id: "1002", helper_name: "Luna", giver_name: "John", reason: "gifted_sprite", created_at: isoDaysAgo(2) }
+];
+
+const spotlightSprites = [
+  { name: "Ember", rarity: "Épico", tier: "epic", symbol: "🔥", description: "Brilla con energía intensa y un aura legendaria dentro de la colección." },
+  { name: "Nova", rarity: "Mítico", tier: "mythic", symbol: "🌌", description: "Un Sprite de presencia cósmica que eleva cualquier colección al siguiente nivel." },
+  { name: "Frostbite", rarity: "Raro", tier: "rare", symbol: "❄️", description: "Frío, limpio y elegante; perfecto para un showcase con identidad fuerte." },
+  { name: "Volt", rarity: "Legendario", tier: "legendary", symbol: "⚡", description: "Electricidad pura y presencia dominante para el centro del dashboard." },
+  { name: "Bloom", rarity: "Común", tier: "common", symbol: "🌿", description: "Simple, fresco y esencial: una pieza que mantiene viva la esencia de la Bóveda." }
 ];
 
 const state = {
   members: [],
   events: [],
   filteredMembers: [],
-  mode: "demo"
+  mode: "demo",
+  spotlightIndex: 0,
+  spotlightTimer: null
 };
 
 const els = {
@@ -40,12 +53,33 @@ const els = {
   emptyState: document.querySelector("#emptyState"),
   systemStatus: document.querySelector("#systemStatus"),
   lastUpdated: document.querySelector("#lastUpdated"),
+  headerLivePill: document.querySelector("#headerLivePill"),
   refreshButton: document.querySelector("#refreshButton"),
   discordButton: document.querySelector("#discordButton"),
   openMyProgress: document.querySelector("#openMyProgress"),
   memberDialog: document.querySelector("#memberDialog"),
   dialogProfile: document.querySelector("#dialogProfile"),
-  footerYear: document.querySelector("#footerYear")
+  footerYear: document.querySelector("#footerYear"),
+  spotlightCard: document.querySelector("#spotlightCard"),
+  spotlightName: document.querySelector("#spotlightName"),
+  spotlightRarity: document.querySelector("#spotlightRarity"),
+  spotlightSprite: document.querySelector("#spotlightSprite"),
+  spotlightDescription: document.querySelector("#spotlightDescription"),
+  championName: document.querySelector("#championName"),
+  championHandle: document.querySelector("#championHandle"),
+  championSummary: document.querySelector("#championSummary"),
+  championRole: document.querySelector("#championRole"),
+  championWeekStat: document.querySelector("#championWeekStat"),
+  championAvatar: document.querySelector("#championAvatar"),
+  breakdownGiftedBar: document.querySelector("#breakdownGiftedBar"),
+  breakdownGiftedValue: document.querySelector("#breakdownGiftedValue"),
+  breakdownIndexBar: document.querySelector("#breakdownIndexBar"),
+  breakdownIndexValue: document.querySelector("#breakdownIndexValue"),
+  breakdownTradeBar: document.querySelector("#breakdownTradeBar"),
+  breakdownTradeValue: document.querySelector("#breakdownTradeValue"),
+  contributorsCount: document.querySelector("#contributorsCount"),
+  keepersCount: document.querySelector("#keepersCount"),
+  guardiansCount: document.querySelector("#guardiansCount")
 };
 
 init();
@@ -55,6 +89,7 @@ async function init() {
   els.discordButton.href = CONFIG.DISCORD_INVITE_URL || "https://discord.com/";
   bindEvents();
   setLoadingState();
+  startSpotlightRotation();
   await loadData();
 }
 
@@ -162,6 +197,9 @@ function inferRole(points) {
 function renderAll() {
   renderStatus();
   renderStats();
+  renderChampion();
+  renderBreakdown();
+  renderRoleProgress();
   renderPodium();
   renderLeaderboard();
   renderActivity();
@@ -173,8 +211,14 @@ function renderStatus() {
     demo: "Modo demostración",
     fallback: "Datos de demostración"
   };
+  const pillCopy = {
+    live: "En vivo",
+    demo: "Demo",
+    fallback: "Fallback"
+  };
   els.systemStatus.textContent = labels[state.mode] || labels.demo;
   els.lastUpdated.textContent = `Actualizado ${formatRelativeTime(new Date().toISOString())}`;
+  els.headerLivePill.lastElementChild.textContent = pillCopy[state.mode] || pillCopy.demo;
 }
 
 function renderStats() {
@@ -189,18 +233,87 @@ function renderStats() {
   els.topHelperPoints.textContent = top ? `${top.assist_points} puntos de Assist` : "Sin datos";
 }
 
+function renderChampion() {
+  const weeklyEvents = state.events.filter((event) => isWithinDays(event.created_at, 7));
+  const scores = new Map();
+
+  weeklyEvents.forEach((event) => {
+    const current = scores.get(event.helper_id) || { count: 0, last: event.created_at };
+    current.count += 1;
+    if (new Date(event.created_at) > new Date(current.last)) current.last = event.created_at;
+    scores.set(event.helper_id, current);
+  });
+
+  const ranked = [...scores.entries()].sort((a, b) => b[1].count - a[1].count || new Date(b[1].last) - new Date(a[1].last));
+  const championId = ranked[0]?.[0] || state.members[0]?.discord_user_id;
+  const champion = state.members.find((member) => member.discord_user_id === championId) || state.members[0];
+  const weekCount = ranked[0]?.[1]?.count || 0;
+
+  if (!champion) return;
+
+  els.championName.textContent = champion.display_name;
+  els.championHandle.textContent = `@${champion.username}`;
+  els.championSummary.textContent = weekCount
+    ? `${champion.display_name} lidera la semana con ${weekCount} Assist${weekCount === 1 ? "" : "s"} registrados recientemente.`
+    : `${champion.display_name} se mantiene como la referencia principal de la comunidad.`;
+  els.championRole.textContent = champion.role_name;
+  els.championWeekStat.textContent = weekCount ? `${weekCount} esta semana` : `${champion.assist_points} Assist totales`;
+  els.championAvatar.innerHTML = champion.avatar_url
+    ? `<img src="${escapeAttribute(champion.avatar_url)}" alt="" loading="lazy" />`
+    : getInitials(champion.display_name);
+}
+
+function renderBreakdown() {
+  const counts = {
+    gifted_sprite: 0,
+    index_help: 0,
+    safe_exchange: 0
+  };
+
+  state.events.forEach((event) => {
+    if (event.reason === "gifted_sprite") counts.gifted_sprite += 1;
+    else if (event.reason === "index_help") counts.index_help += 1;
+    else if (event.reason === "safe_exchange") counts.safe_exchange += 1;
+  });
+
+  const max = Math.max(counts.gifted_sprite, counts.index_help, counts.safe_exchange, 1);
+  updateBreakdownItem(els.breakdownGiftedBar, els.breakdownGiftedValue, counts.gifted_sprite, max);
+  updateBreakdownItem(els.breakdownIndexBar, els.breakdownIndexValue, counts.index_help, max);
+  updateBreakdownItem(els.breakdownTradeBar, els.breakdownTradeValue, counts.safe_exchange, max);
+}
+
+function renderRoleProgress() {
+  const contributors = state.members.filter((member) => member.assist_points >= 3 && member.assist_points < 10).length;
+  const keepers = state.members.filter((member) => member.assist_points >= 10 && member.assist_points < 25).length;
+  const guardians = state.members.filter((member) => member.assist_points >= 25).length;
+
+  els.contributorsCount.textContent = `${contributors} miembro${contributors === 1 ? "" : "s"}`;
+  els.keepersCount.textContent = `${keepers} miembro${keepers === 1 ? "" : "s"}`;
+  els.guardiansCount.textContent = `${guardians} miembro${guardians === 1 ? "" : "s"}`;
+}
+
 function renderPodium() {
   const topThree = state.members.slice(0, 3);
+  const placementTheme = {
+    1: { className: "first", icon: "♛", label: "Campeón" },
+    2: { className: "second", icon: "✦", label: "Subcampeón" },
+    3: { className: "third", icon: "✦", label: "Top 3" }
+  };
+
   els.podium.innerHTML = topThree.map((member, index) => {
     const placement = index + 1;
-    const className = placement === 1 ? "first" : placement === 2 ? "second" : "third";
+    const theme = placementTheme[placement];
     return `
-      <button class="podium-card ${className}" type="button" data-user-id="${escapeHtml(member.discord_user_id)}">
+      <button class="podium-card ${theme.className}" type="button" data-user-id="${escapeHtml(member.discord_user_id)}">
+        <span class="podium-glow"></span>
         <span class="rank-badge">${placement}</span>
+        <span class="podium-flair" aria-hidden="true">${theme.icon}</span>
         ${avatarMarkup(member)}
         <strong>${escapeHtml(member.display_name)}</strong>
         <small>@${escapeHtml(member.username)}</small>
+        <span class="podium-role">${escapeHtml(member.role_name)}</span>
         <div class="podium-points">${formatNumber(member.assist_points)} Assist</div>
+        <span class="podium-label">${theme.label}</span>
       </button>
     `;
   }).join("");
@@ -274,6 +387,7 @@ function openMemberProfile(userId) {
   if (!member) return;
   const position = state.members.findIndex((item) => item.discord_user_id === userId) + 1;
   const recentCount = state.events.filter((event) => event.helper_id === userId && isWithinDays(event.created_at, 30)).length;
+  const counts = memberContributionCounts(userId);
 
   els.dialogProfile.innerHTML = `
     <div class="dialog-profile-head">
@@ -287,72 +401,158 @@ function openMemberProfile(userId) {
       <div class="dialog-stat"><small>Posición general</small><strong>#${position}</strong></div>
       <div class="dialog-stat"><small>Puntos de Assist</small><strong>${formatNumber(member.assist_points)}</strong></div>
       <div class="dialog-stat"><small>Rol actual</small><strong>${escapeHtml(member.role_name)}</strong></div>
-      <div class="dialog-stat"><small>Actividad reciente</small><strong>${recentCount}</strong></div>
+      <div class="dialog-stat"><small>Actividad 30 días</small><strong>${recentCount}</strong></div>
+    </div>
+    <div class="dialog-breakdown">
+      <div class="dialog-break-item"><span>🎁</span><div><small>Sprites regalados</small><strong>${counts.gifted_sprite}</strong></div></div>
+      <div class="dialog-break-item"><span>📁</span><div><small>Ayuda de indexación</small><strong>${counts.index_help}</strong></div></div>
+      <div class="dialog-break-item"><span>🤝</span><div><small>Intercambios seguros</small><strong>${counts.safe_exchange}</strong></div></div>
     </div>
     <p class="dialog-note">Este perfil reconoce la ayuda registrada por Sprite Vault. Los requisitos internos de los roles no se muestran públicamente.</p>
   `;
   els.memberDialog.showModal();
 }
 
+function memberContributionCounts(userId) {
+  return state.events.reduce((acc, event) => {
+    if (event.helper_id !== userId) return acc;
+    if (event.reason === "gifted_sprite") acc.gifted_sprite += 1;
+    else if (event.reason === "index_help") acc.index_help += 1;
+    else if (event.reason === "safe_exchange") acc.safe_exchange += 1;
+    return acc;
+  }, { gifted_sprite: 0, index_help: 0, safe_exchange: 0 });
+}
+
 function avatarMarkup(member) {
   if (member.avatar_url) {
     return `<span class="avatar"><img src="${escapeAttribute(member.avatar_url)}" alt="" loading="lazy" /></span>`;
   }
-  return `<span class="avatar" aria-hidden="true">${initials(member.display_name)}</span>`;
+  return `<span class="avatar">${getInitials(member.display_name)}</span>`;
 }
 
-function initials(name) {
-  return String(name || "SV").split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+function getInitials(name) {
+  return String(name || "SV")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
-function reasonCopy(reason, helper, giver) {
-  const safeHelper = escapeHtml(helper);
-  const safeGiver = escapeHtml(giver);
-  const map = {
-    gifted_sprite: { icon: "🎁", text: `<strong>${safeHelper}</strong> recibió un Assist de ${safeGiver} por regalar un Sprite.` },
-    index_help: { icon: "📁", text: `<strong>${safeHelper}</strong> recibió un Assist de ${safeGiver} por ayudar a indexar.` },
-    safe_exchange: { icon: "🤝", text: `<strong>${safeHelper}</strong> recibió un Assist de ${safeGiver} por un intercambio seguro.` },
-    community_help: { icon: "⭐", text: `<strong>${safeHelper}</strong> recibió un Assist de ${safeGiver}.` }
+function reasonCopy(reason, helperName, giverName) {
+  const safeHelper = escapeHtml(helperName);
+  const safeGiver = escapeHtml(giverName);
+  const copy = {
+    gifted_sprite: {
+      icon: "🎁",
+      text: `<strong>${safeHelper}</strong> ayudó a <strong>${safeGiver}</strong> regalando un Sprite.`
+    },
+    index_help: {
+      icon: "📁",
+      text: `<strong>${safeHelper}</strong> ayudó a <strong>${safeGiver}</strong> con el indexado.`
+    },
+    safe_exchange: {
+      icon: "🤝",
+      text: `<strong>${safeHelper}</strong> completó un intercambio seguro con <strong>${safeGiver}</strong>.`
+    },
+    community_help: {
+      icon: "⭐",
+      text: `<strong>${safeHelper}</strong> ayudó a <strong>${safeGiver}</strong> dentro de la comunidad.`
+    }
   };
-  return map[reason] || map.community_help;
+  return copy[reason] || copy.community_help;
 }
 
-function isWithinDays(dateString, days) {
-  const difference = Date.now() - new Date(dateString).getTime();
-  return difference >= 0 && difference <= days * 86400000;
+function updateBreakdownItem(barEl, valueEl, value, max) {
+  valueEl.textContent = formatNumber(value);
+  requestAnimationFrame(() => {
+    barEl.style.width = `${Math.max((value / max) * 100, value ? 14 : 0)}%`;
+  });
 }
 
-function formatRelativeTime(dateString) {
-  const date = new Date(dateString);
-  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
-  const formatter = new Intl.RelativeTimeFormat("es", { numeric: "auto" });
-  if (seconds < 60) return "ahora";
-  if (seconds < 3600) return formatter.format(-Math.floor(seconds / 60), "minute");
-  if (seconds < 86400) return formatter.format(-Math.floor(seconds / 3600), "hour");
-  if (seconds < 2592000) return formatter.format(-Math.floor(seconds / 86400), "day");
-  return new Intl.DateTimeFormat("es", { day: "numeric", month: "short", year: "numeric" }).format(date);
+function startSpotlightRotation() {
+  renderSpotlight(spotlightSprites[state.spotlightIndex]);
+  if (state.spotlightTimer) clearInterval(state.spotlightTimer);
+  state.spotlightTimer = setInterval(() => {
+    state.spotlightIndex = (state.spotlightIndex + 1) % spotlightSprites.length;
+    renderSpotlight(spotlightSprites[state.spotlightIndex]);
+  }, 6000);
 }
 
-function formatNumber(value) {
-  return new Intl.NumberFormat("es").format(value);
+function renderSpotlight(sprite) {
+  if (!sprite) return;
+  els.spotlightCard.className = `spotlight-card rarity-${sprite.tier}`;
+  els.spotlightName.textContent = sprite.name;
+  els.spotlightRarity.textContent = sprite.rarity;
+  els.spotlightSprite.textContent = sprite.symbol;
+  els.spotlightDescription.textContent = sprite.description;
 }
 
-function animateNumber(element, target) {
-  const start = performance.now();
-  const duration = 650;
-  const initial = 0;
+function animateNumber(element, value) {
+  const start = Number(element.dataset.value || 0);
+  const end = Number(value || 0);
+  const duration = 700;
+  const startedAt = performance.now();
+
   function frame(now) {
-    const progress = Math.min(1, (now - start) / duration);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    element.textContent = formatNumber(Math.round(initial + (target - initial) * eased));
+    const progress = Math.min((now - startedAt) / duration, 1);
+    const current = Math.round(start + (end - start) * easeOutCubic(progress));
+    element.textContent = formatNumber(current);
     if (progress < 1) requestAnimationFrame(frame);
+    else element.dataset.value = String(end);
   }
+
   requestAnimationFrame(frame);
 }
 
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
 function setLoadingState() {
-  [els.totalAssists, els.activeHelpers, els.weeklyAssists].forEach((element) => element.textContent = "…");
-  els.topHelper.textContent = "Cargando…";
+  [
+    els.totalAssists,
+    els.activeHelpers,
+    els.weeklyAssists,
+    els.topHelper,
+    els.topHelperPoints,
+    els.systemStatus,
+    els.lastUpdated,
+    els.championName,
+    els.championSummary,
+    els.championRole,
+    els.championWeekStat
+  ].forEach((node) => node?.classList.add("skeleton"));
+
+  window.setTimeout(() => {
+    document.querySelectorAll(".skeleton").forEach((node) => node.classList.remove("skeleton"));
+  }, 900);
+}
+
+function formatRelativeTime(dateInput) {
+  const date = new Date(dateInput);
+  const seconds = Math.round((date.getTime() - Date.now()) / 1000);
+  const formatter = new Intl.RelativeTimeFormat("es", { numeric: "auto" });
+  const ranges = [
+    { max: 60, value: 1, unit: "second" },
+    { max: 3600, value: 60, unit: "minute" },
+    { max: 86400, value: 3600, unit: "hour" },
+    { max: 604800, value: 86400, unit: "day" },
+    { max: 2629800, value: 604800, unit: "week" },
+    { max: 31557600, value: 2629800, unit: "month" },
+    { max: Infinity, value: 31557600, unit: "year" }
+  ];
+  const range = ranges.find((item) => Math.abs(seconds) < item.max) || ranges[ranges.length - 1];
+  return formatter.format(Math.round(seconds / range.value), range.unit);
+}
+
+function isWithinDays(dateInput, days) {
+  return Date.now() - new Date(dateInput).getTime() <= days * 24 * 60 * 60 * 1000;
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat("es-ES").format(Number(value || 0));
 }
 
 function escapeHtml(value) {
@@ -361,17 +561,17 @@ function escapeHtml(value) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll("'", "&#39;");
 }
 
 function escapeAttribute(value) {
-  return escapeHtml(value).replaceAll("`", "&#096;");
-}
-
-function isoDaysAgo(days) {
-  return new Date(Date.now() - days * 86400000).toISOString();
+  return escapeHtml(value);
 }
 
 function isoHoursAgo(hours) {
-  return new Date(Date.now() - hours * 3600000).toISOString();
+  return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+}
+
+function isoDaysAgo(days) {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 }
