@@ -6,24 +6,29 @@
   <meta name="theme-color" content="#090612" />
   <meta name="description" content="Clasificación oficial de Assist de Sprite Vault." />
   <title>Sprite Vault · Assist Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="background-grid" aria-hidden="true"></div>
+  <div class="background-noise" aria-hidden="true"></div>
   <div class="background-orb orb-one" aria-hidden="true"></div>
   <div class="background-orb orb-two" aria-hidden="true"></div>
+  <div class="background-orb orb-three" aria-hidden="true"></div>
 
   <header class="site-header">
     <a class="brand" href="#top" aria-label="Sprite Vault Assist Dashboard">
       <span class="brand-mark" aria-hidden="true">✦</span>
       <span>
         <strong>Sprite Vault</strong>
-        <small>Community Assist</small>
+        <small>Community Assist Command Center</small>
       </span>
     </a>
 
     <nav class="header-actions" aria-label="Acciones principales">
-      <span class="live-pill"><span class="status-dot"></span>En vivo</span>
+      <span id="headerLivePill" class="live-pill"><span class="status-dot"></span><span>Conectando…</span></span>
       <button id="refreshButton" class="icon-button" type="button" title="Actualizar datos" aria-label="Actualizar datos">↻</button>
       <a id="discordButton" class="primary-button" href="#" target="_blank" rel="noreferrer">Entrar al Discord</a>
     </nav>
@@ -33,45 +38,75 @@
     <section class="hero" aria-labelledby="pageTitle">
       <div class="hero-copy">
         <span class="eyebrow"><span></span> RECONOCIMIENTO DE LA COMUNIDAD</span>
-        <h1 id="pageTitle">La ayuda que mueve <em>la Bóveda.</em></h1>
+        <h1 id="pageTitle">La ayuda que impulsa <em>la Bóveda.</em></h1>
         <p>
-          El ranking oficial de quienes regalan Sprites, ayudan a indexar y hacen posible
-          una comunidad de intercambios más segura.
+          Un dashboard diseñado para destacar a quienes regalan Sprites, ayudan a indexar
+          y hacen que Sprite Vault sea una comunidad más segura y activa.
         </p>
         <div class="hero-actions">
-          <a class="primary-button large" href="#clasificacion">Explorar clasificación <span aria-hidden="true">↓</span></a>
+          <a class="primary-button large" href="#clasificacion">Ver clasificación <span aria-hidden="true">↓</span></a>
           <button id="openMyProgress" class="secondary-button large" type="button">Buscar mi perfil</button>
         </div>
         <div class="hero-trust">
           <span>✓ Sin dinero real</span>
           <span>✓ Sin V-Bucks</span>
-          <span>✓ Ayuda verificada</span>
+          <span>✓ Reconocimiento real</span>
         </div>
       </div>
 
-      <div class="vault-card" aria-label="Estado del sistema">
-        <div class="vault-card-top">
-          <span class="vault-label">VAULT NETWORK</span>
-          <span class="signal-bars" aria-hidden="true"><i></i><i></i><i></i></span>
-        </div>
-        <div class="vault-visual">
-          <div class="orbit orbit-one"></div>
-          <div class="orbit orbit-two"></div>
-          <div class="vault-ring"><span class="vault-core">✦</span></div>
-        </div>
-        <div class="vault-status">
-          <span class="status-dot"></span>
-          <div>
-            <strong id="systemStatus">Modo demostración</strong>
-            <p id="lastUpdated">Cargando datos…</p>
+      <div class="hero-visuals">
+        <section id="spotlightCard" class="spotlight-card rarity-epic" aria-labelledby="spotlightName">
+          <div class="spotlight-card-top">
+            <div>
+              <span class="spotlight-label">SPRITE DESTACADO</span>
+              <h2 id="spotlightName">Cargando…</h2>
+            </div>
+            <span id="spotlightRarity" class="spotlight-rarity">Épico</span>
           </div>
-        </div>
+          <div class="spotlight-stage">
+            <div class="spotlight-aura"></div>
+            <div class="spotlight-ring ring-a"></div>
+            <div class="spotlight-ring ring-b"></div>
+            <div class="spotlight-sprite-wrap">
+              <div id="spotlightSprite" class="spotlight-sprite" aria-hidden="true">✦</div>
+            </div>
+          </div>
+          <p id="spotlightDescription" class="spotlight-description">Un vistazo a la colección que hace única a la Bóveda.</p>
+          <div class="spotlight-meta">
+            <span>Rotación automática</span>
+            <span>cada 6 segundos</span>
+          </div>
+        </section>
+
+        <section class="vault-status-card" aria-label="Estado del sistema">
+          <div class="vault-status-top">
+            <span class="vault-label">VAULT NETWORK</span>
+            <span class="signal-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+          </div>
+          <div class="vault-status-body">
+            <div class="vault-core-visual">
+              <div class="orbit orbit-one"></div>
+              <div class="orbit orbit-two"></div>
+              <div class="vault-core-badge">✦</div>
+            </div>
+            <div class="vault-system-copy">
+              <div class="vault-system-line">
+                <span class="status-dot"></span>
+                <strong id="systemStatus">Modo demostración</strong>
+              </div>
+              <p id="lastUpdated">Cargando datos…</p>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
 
     <section class="section-intro" aria-label="Resumen">
-      <div><span class="eyebrow"><span></span> RESUMEN</span><h2>Estado de la comunidad</h2></div>
-      <p>Métricas actualizadas de contribución y reconocimiento.</p>
+      <div>
+        <span class="eyebrow"><span></span> RESUMEN</span>
+        <h2>Estado de la comunidad</h2>
+      </div>
+      <p>Métricas rápidas para entender la actividad actual de Sprite Vault.</p>
     </section>
 
     <section class="stats-grid" aria-label="Estadísticas de Assist">
@@ -101,13 +136,90 @@
       </article>
     </section>
 
+    <section id="weeklyChampion" class="champion-banner panel" aria-labelledby="championTitle">
+      <div class="champion-copy">
+        <span class="eyebrow"><span></span> CAMPEÓN DE LA SEMANA</span>
+        <h2 id="championTitle">Impulsando la comunidad esta semana</h2>
+        <p id="championSummary">Cargando campeón semanal…</p>
+        <div class="champion-badges">
+          <span id="championRole" class="role-pill champion-pill">—</span>
+          <span id="championWeekStat" class="champion-stat-pill">—</span>
+        </div>
+      </div>
+      <div class="champion-profile">
+        <div id="championAvatar" class="avatar champion-avatar" aria-hidden="true">SV</div>
+        <div class="champion-meta">
+          <strong id="championName">—</strong>
+          <small id="championHandle">@spritevault</small>
+        </div>
+        <div class="champion-crown" aria-hidden="true">♛</div>
+      </div>
+    </section>
+
+    <section class="insight-grid" aria-label="Desglose y progreso">
+      <section class="panel contribution-breakdown-panel">
+        <div class="panel-header compact with-copy">
+          <div>
+            <span class="eyebrow"><span></span> DESGLOSE</span>
+            <h2>Cómo contribuye la comunidad</h2>
+            <p>Distribución de los tipos de ayuda registrados.</p>
+          </div>
+        </div>
+        <div class="breakdown-list">
+          <article class="breakdown-item">
+            <div class="breakdown-head"><span class="breakdown-icon">🎁</span><div><strong>Sprites regalados</strong><small>Ayuda directa a otros miembros</small></div><span id="breakdownGiftedValue" class="breakdown-value">0</span></div>
+            <div class="progress-track"><span id="breakdownGiftedBar" class="progress-fill gifted"></span></div>
+          </article>
+          <article class="breakdown-item">
+            <div class="breakdown-head"><span class="breakdown-icon">📁</span><div><strong>Ayudas de indexación</strong><small>Organización y registro de Sprites</small></div><span id="breakdownIndexValue" class="breakdown-value">0</span></div>
+            <div class="progress-track"><span id="breakdownIndexBar" class="progress-fill indexing"></span></div>
+          </article>
+          <article class="breakdown-item">
+            <div class="breakdown-head"><span class="breakdown-icon">🤝</span><div><strong>Intercambios seguros</strong><small>Trades limpios y justos</small></div><span id="breakdownTradeValue" class="breakdown-value">0</span></div>
+            <div class="progress-track"><span id="breakdownTradeBar" class="progress-fill trade"></span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel role-progress-panel">
+        <div class="panel-header compact with-copy">
+          <div>
+            <span class="eyebrow"><span></span> PROGRESIÓN</span>
+            <h2>Ruta de rangos</h2>
+            <p>Los roles principales de Assist dentro de la Bóveda.</p>
+          </div>
+        </div>
+        <div class="role-progress-line" aria-hidden="true"></div>
+        <div class="role-progress-grid">
+          <article class="role-card role-tier-one">
+            <span class="role-card-icon">🌱</span>
+            <strong>Vault Contributor</strong>
+            <small>3+ puntos de Assist</small>
+            <span id="contributorsCount" class="role-count">0 miembros</span>
+          </article>
+          <article class="role-card role-tier-two">
+            <span class="role-card-icon">💠</span>
+            <strong>Sprite Keeper</strong>
+            <small>10+ puntos de Assist</small>
+            <span id="keepersCount" class="role-count">0 miembros</span>
+          </article>
+          <article class="role-card role-tier-three">
+            <span class="role-card-icon">💎</span>
+            <strong>Crystal Guardian</strong>
+            <small>25+ puntos de Assist</small>
+            <span id="guardiansCount" class="role-count">0 miembros</span>
+          </article>
+        </div>
+      </section>
+    </section>
+
     <section id="clasificacion" class="dashboard-grid">
       <div class="leaderboard-panel panel">
-        <div class="panel-header">
+        <div class="panel-header with-copy">
           <div>
             <span class="eyebrow"><span></span> CLASIFICACIÓN GENERAL</span>
             <h2>Top de la Bóveda</h2>
-            <p>Selecciona un miembro para ver su perfil.</p>
+            <p>Selecciona un miembro para ver su perfil detallado.</p>
           </div>
           <div class="search-wrap">
             <span aria-hidden="true">⌕</span>
@@ -133,10 +245,11 @@
 
       <aside class="sidebar-stack">
         <section class="panel activity-panel">
-          <div class="panel-header compact">
+          <div class="panel-header compact with-copy">
             <div>
               <span class="eyebrow"><span></span> ACTIVIDAD RECIENTE</span>
               <h2>Últimos Assists</h2>
+              <p>Movimientos recientes dentro de la comunidad.</p>
             </div>
             <span class="pulse-label"><i></i> LIVE</span>
           </div>
@@ -144,10 +257,11 @@
         </section>
 
         <section class="panel contribution-panel">
-          <div class="panel-header compact">
+          <div class="panel-header compact with-copy">
             <div>
               <span class="eyebrow"><span></span> CÓMO SUBIR</span>
               <h2>Ayuda que cuenta</h2>
+              <p>Acciones que suman reconocimiento dentro del sistema.</p>
             </div>
           </div>
           <ul class="contribution-list">
