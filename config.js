@@ -8,11 +8,33 @@ window.SPRITE_VAULT_CONFIG = {
   RECENT_ACTIVITY_LIMIT: 8
 };
 
-window.addEventListener("load", () => {
-  if (document.querySelector("script[data-helped-profiles]")) return;
+window.addEventListener("load", async () => {
+  const loadExtension = (src, key) =>
+    new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[data-extension="${key}"]`);
+      if (existing) {
+        resolve();
+        return;
+      }
 
-  const script = document.createElement("script");
-  script.src = "helped-profiles.js?v=20260726";
-  script.dataset.helpedProfiles = "true";
-  document.body.appendChild(script);
+      const script = document.createElement("script");
+      script.src = src;
+      script.dataset.extension = key;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.body.appendChild(script);
+    });
+
+  try {
+    await loadExtension(
+      "helped-profiles.js?v=20260726-people",
+      "helped-profiles"
+    );
+    await loadExtension(
+      "founder-dashboard.js?v=20260726-founder",
+      "founder-dashboard"
+    );
+  } catch (error) {
+    console.error("No se pudieron cargar las mejoras del dashboard:", error);
+  }
 });
