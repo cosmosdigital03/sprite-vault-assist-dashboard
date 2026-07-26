@@ -7,3 +7,12 @@ window.SPRITE_VAULT_CONFIG = {
   LEADERBOARD_LIMIT: 100,
   RECENT_ACTIVITY_LIMIT: 8
 };
+
+window.addEventListener("load", () => {
+  if (document.querySelector("script[data-helped-profiles]")) return;
+
+  const script = document.createElement("script");
+  script.src = "helped-profiles.js?v=20260726";
+  script.dataset.helpedProfiles = "true";
+  document.body.appendChild(script);
+});
