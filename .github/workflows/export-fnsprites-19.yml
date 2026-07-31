@@ -1,0 +1,58 @@
+name: Export fnsprites 19 original images
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  export-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download exact tracker images
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p images
+          base="https://staticvacant.github.io/fnsprites/sprites"
+          files=(
+            wick_basic.png
+            grim_gem.png
+            grim_holofoil.png
+            ironmouse_basic.png
+            llama_basic.png
+            llama_candy.png
+            llama_galaxy.png
+            llama_gem.png
+            llama_gold.png
+            peely_basic.png
+            peely_candy.png
+            peely_galaxy.png
+            peely_gold.png
+            peely_holofoil.png
+            earth_quack.png
+            fire_quack.png
+            water_quack.png
+            zeropoint_quack.png
+            zeropoint_rift.png
+          )
+          for file in "${files[@]}"; do
+            curl --fail --location --retry 3 --retry-all-errors \
+              "$base/$file" --output "images/$file"
+          done
+          test "$(find images -maxdepth 1 -type f | wc -l)" -eq 19
+          file images/*
+          sha256sum images/* > SHA256SUMS.txt
+
+      - name: Upload original images
+        uses: actions/upload-artifact@v4
+        with:
+          name: staticvacant-fnsprites-19-original-images
+          path: |
+            images/
+            SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
