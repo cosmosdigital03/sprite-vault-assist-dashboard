@@ -27,7 +27,7 @@ window.addEventListener("load", async () => {
 
   try {
     await loadExtension(
-      "helped-profiles.js?v=20260802-quantity",
+      "helped-profiles.js?v=20260802-history-details",
       "helped-profiles"
     );
     await loadExtension(
