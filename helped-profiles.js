@@ -8,7 +8,11 @@
   patchLeaderboardHeader();
 
   const originalLoadData = loadData;
+  const originalRenderStats = renderStats;
 
+  renderStats = renderStatsWithQuantities;
+  renderChampion = renderChampionWithQuantities;
+  renderBreakdown = renderBreakdownWithQuantities;
   renderPodium = renderPodiumWithPeopleHelped;
   renderLeaderboard = renderLeaderboardWithPeopleHelped;
   openMemberProfile = openExpandedMemberProfile;
@@ -16,6 +20,9 @@
   loadData = async function loadDataWithHelpHistory() {
     await originalLoadData();
     await refreshFullAssistHistory();
+    renderStats();
+    renderChampion();
+    renderBreakdown();
     renderPodium();
     renderLeaderboard();
   };
@@ -24,6 +31,9 @@
     .catch((error) => console.warn("No se pudo cargar el historial completo de Assist:", error))
     .finally(() => {
       patchLeaderboardHeader();
+      renderStats();
+      renderChampion();
+      renderBreakdown();
       renderPodium();
       renderLeaderboard();
     });
@@ -51,7 +61,7 @@
 
       const rows = [];
       for (let offset = 0; offset < HISTORY_MAX_ROWS; offset += HISTORY_PAGE_SIZE) {
-        const path = `/rest/v1/assist_events?select=id,helper_id,helper_name,giver_id,giver_name,reason,created_at&order=created_at.desc&limit=${HISTORY_PAGE_SIZE}&offset=${offset}`;
+        const path = `/rest/v1/assist_events?select=id,helper_id,helper_name,giver_id,giver_name,reason,quantity,created_at&order=created_at.desc&limit=${HISTORY_PAGE_SIZE}&offset=${offset}`;
         const page = await supabaseGet(path);
         rows.push(...page);
         if (page.length < HISTORY_PAGE_SIZE) break;
@@ -76,9 +86,15 @@
         giver_id: String(row.giver_id || ""),
         giver_name: row.giver_name || "Otro miembro",
         reason: row.reason || "community_help",
+        quantity: normalizeQuantity(row.quantity),
         created_at: row.created_at || new Date().toISOString()
       }))
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  function normalizeQuantity(value) {
+    const quantity = Number(value ?? 1);
+    return Number.isInteger(quantity) && quantity > 0 ? quantity : 1;
   }
 
   function getHistoryEvents() {
@@ -87,6 +103,10 @@
 
   function getMemberEvents(userId) {
     return getHistoryEvents().filter((event) => event.helper_id === String(userId));
+  }
+
+  function totalQuantity(events) {
+    return events.reduce((sum, event) => sum + event.quantity, 0);
   }
 
   function buildPeopleHelped(userId) {
@@ -105,10 +125,10 @@
         lastHelpedAt: event.created_at
       };
 
-      current.count += 1;
-      if (event.reason === "gifted_sprite") current.gifted += 1;
-      else if (event.reason === "index_help") current.indexed += 1;
-      else current.community += 1;
+      current.count += event.quantity;
+      if (event.reason === "gifted_sprite") current.gifted += event.quantity;
+      else if (event.reason === "index_help") current.indexed += event.quantity;
+      else current.community += event.quantity;
 
       if (new Date(event.created_at) > new Date(current.lastHelpedAt)) {
         current.lastHelpedAt = event.created_at;
@@ -124,6 +144,65 @@
 
   function peopleHelpedCount(userId) {
     return buildPeopleHelped(userId).length;
+  }
+
+  function renderStatsWithQuantities() {
+    originalRenderStats();
+    const weekly = totalQuantity(
+      getHistoryEvents().filter((event) => isWithinDays(event.created_at, 7))
+    );
+    animateNumber(els.weeklyAssists, weekly);
+  }
+
+  function renderChampionWithQuantities() {
+    const weeklyEvents = getHistoryEvents().filter((event) => isWithinDays(event.created_at, 7));
+    const scores = new Map();
+
+    weeklyEvents.forEach((event) => {
+      const current = scores.get(event.helper_id) || { count: 0, last: event.created_at };
+      current.count += event.quantity;
+      if (new Date(event.created_at) > new Date(current.last)) current.last = event.created_at;
+      scores.set(event.helper_id, current);
+    });
+
+    const ranked = [...scores.entries()].sort(
+      (a, b) => b[1].count - a[1].count || new Date(b[1].last) - new Date(a[1].last)
+    );
+    const championId = ranked[0]?.[0] || state.members[0]?.discord_user_id;
+    const champion = state.members.find((member) => member.discord_user_id === championId) || state.members[0];
+    const weekCount = ranked[0]?.[1]?.count || 0;
+
+    if (!champion) return;
+
+    els.championName.textContent = champion.display_name;
+    els.championHandle.textContent = `@${champion.username}`;
+    els.championSummary.textContent = weekCount
+      ? `${champion.display_name} lidera la semana con ${weekCount} Assist${weekCount === 1 ? "" : "s"} registrados recientemente.`
+      : `${champion.display_name} se mantiene como la referencia principal de la comunidad.`;
+    els.championRole.textContent = champion.role_name;
+    els.championWeekStat.textContent = weekCount ? `${weekCount} esta semana` : `${champion.assist_points} Assist totales`;
+    els.championAvatar.innerHTML = champion.avatar_url
+      ? `<img src="${escapeAttribute(champion.avatar_url)}" alt="" loading="lazy" />`
+      : getInitials(champion.display_name);
+  }
+
+  function renderBreakdownWithQuantities() {
+    const counts = {
+      gifted_sprite: 0,
+      index_help: 0,
+      safe_exchange: 0
+    };
+
+    getHistoryEvents().forEach((event) => {
+      if (event.reason === "gifted_sprite") counts.gifted_sprite += event.quantity;
+      else if (event.reason === "index_help") counts.index_help += event.quantity;
+      else if (event.reason === "safe_exchange") counts.safe_exchange += event.quantity;
+    });
+
+    const max = Math.max(counts.gifted_sprite, counts.index_help, counts.safe_exchange, 1);
+    updateBreakdownItem(els.breakdownGiftedBar, els.breakdownGiftedValue, counts.gifted_sprite, max);
+    updateBreakdownItem(els.breakdownIndexBar, els.breakdownIndexValue, counts.index_help, max);
+    updateBreakdownItem(els.breakdownTradeBar, els.breakdownTradeValue, counts.safe_exchange, max);
   }
 
   function renderPodiumWithPeopleHelped() {
@@ -191,11 +270,12 @@
 
     const position = state.members.findIndex((item) => item.discord_user_id === String(userId)) + 1;
     const events = getMemberEvents(userId);
-    const recentCount = events.filter((event) => isWithinDays(event.created_at, 30)).length;
+    const recentCount = totalQuantity(events.filter((event) => isWithinDays(event.created_at, 30)));
+    const totalHelps = totalQuantity(events);
     const counts = events.reduce((acc, event) => {
-      if (event.reason === "gifted_sprite") acc.gifted += 1;
-      else if (event.reason === "index_help") acc.indexed += 1;
-      else acc.community += 1;
+      if (event.reason === "gifted_sprite") acc.gifted += event.quantity;
+      else if (event.reason === "index_help") acc.indexed += event.quantity;
+      else acc.community += event.quantity;
       return acc;
     }, { gifted: 0, indexed: 0, community: 0 });
     const people = buildPeopleHelped(userId);
@@ -214,7 +294,7 @@
         <div class="dialog-stat"><small>Posición general</small><strong>#${position}</strong></div>
         <div class="dialog-stat"><small>Puntos de Assist</small><strong>${formatNumber(member.assist_points)}</strong></div>
         <div class="dialog-stat highlight-stat"><small>Personas ayudadas</small><strong>${formatNumber(people.length)}</strong></div>
-        <div class="dialog-stat"><small>Ayudas registradas</small><strong>${formatNumber(events.length)}</strong></div>
+        <div class="dialog-stat"><small>Ayudas registradas</small><strong>${formatNumber(totalHelps)}</strong></div>
       </div>
 
       <div class="dialog-breakdown">
