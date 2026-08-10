@@ -28,12 +28,24 @@ Deno.serve(async (request) => {
   const partnerName = text(payload.partner_name ?? payload.giver_name) || "Otro miembro";
   const eventId = text(payload.event_id) || crypto.randomUUID();
 
+  const quantityText = text(payload.quantity);
+  const quantity = quantityText === "" ? 1 : Number(quantityText);
+
   if (!traderId) {
     return json({ error: "trader_id is required" }, 400);
   }
 
   if (partnerId && partnerId === traderId) {
     return json({ error: "A member cannot trade with themselves" }, 400);
+  }
+
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+    return json({
+      error: "Invalid quantity",
+      quantity,
+      minimum_quantity: 1,
+      maximum_quantity: 10
+    }, 400);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -115,7 +127,7 @@ Deno.serve(async (request) => {
       giver_id: partnerId || null,
       giver_name: partnerName,
       reason: "safe_exchange",
-      quantity: 1,
+      quantity,
       created_at: now
     }, { onConflict: "external_event_id", ignoreDuplicates: true });
 
@@ -138,7 +150,7 @@ Deno.serve(async (request) => {
     trade_count: count ?? null,
     points_changed: false,
     reason: "safe_exchange",
-    quantity: 1
+    quantity
   }, 200);
 });
 
