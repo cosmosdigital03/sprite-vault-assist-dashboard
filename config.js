@@ -34,6 +34,10 @@ window.addEventListener("load", async () => {
       "founder-dashboard.js?v=20260726-founder",
       "founder-dashboard"
     );
+    await loadExtension(
+      "staff-activity-filters.js?v=20260809-trade-activity",
+      "staff-activity-filters"
+    );
   } catch (error) {
     console.error("No se pudieron cargar las mejoras del dashboard:", error);
   }
