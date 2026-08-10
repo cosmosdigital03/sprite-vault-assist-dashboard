@@ -13,6 +13,7 @@
   let activityType = "all";
   let searchText = "";
   let allEvents = [];
+  let memberTradeMeta = new Map();
   let loadingEvents = null;
 
   const originalApplySearch = applySearch;
@@ -56,16 +57,21 @@
         return;
       }
 
-      const rows = [];
-      for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
-        const path =
-          `/rest/v1/assist_events?select=id,helper_id,helper_name,giver_id,giver_name,reason,created_at` +
-          `&order=created_at.desc&limit=${PAGE_SIZE}&offset=${offset}`;
-        const page = await supabaseGet(path);
-        rows.push(...page);
-        if (page.length < PAGE_SIZE) break;
-      }
-      allEvents = normalizeFilterEvents(rows);
+      const [eventRows, memberRows] = await Promise.all([
+        fetchAllEvents(),
+        fetchTradeMetadata()
+      ]);
+
+      allEvents = normalizeFilterEvents(eventRows);
+      memberTradeMeta = new Map(
+        memberRows.map((row) => [
+          String(row.discord_user_id || ""),
+          {
+            trade_count_base: normalizeNonNegativeInt(row.trade_count_base),
+            trade_synced_at: row.trade_synced_at || null
+          }
+        ])
+      );
     })();
 
     try {
@@ -73,6 +79,32 @@
     } finally {
       loadingEvents = null;
     }
+  }
+
+  async function fetchAllEvents() {
+    const rows = [];
+    for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
+      const path =
+        `/rest/v1/assist_events?select=id,helper_id,helper_name,giver_id,giver_name,reason,quantity,created_at` +
+        `&order=created_at.desc&limit=${PAGE_SIZE}&offset=${offset}`;
+      const page = await supabaseGet(path);
+      rows.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
+    return rows;
+  }
+
+  async function fetchTradeMetadata() {
+    const rows = [];
+    for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
+      const path =
+        `/rest/v1/assist_members?select=discord_user_id,trade_count_base,trade_synced_at` +
+        `&limit=${PAGE_SIZE}&offset=${offset}`;
+      const page = await supabaseGet(path);
+      rows.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
+    return rows;
   }
 
   function normalizeFilterEvents(rows) {
@@ -84,6 +116,7 @@
         giver_id: String(row.giver_id || ""),
         giver_name: row.giver_name || "Otro miembro",
         reason: row.reason || "community_help",
+        quantity: normalizePositiveInt(row.quantity),
         created_at: row.created_at || new Date().toISOString()
       }))
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -103,12 +136,34 @@
   function applyStaffFilters() {
     const activeIds = new Set(eventsSource().filter(eventMatches).map((event) => event.helper_id));
 
+    if (activityDays === 0 && activityType === "trade") {
+      memberTradeMeta.forEach((meta, id) => {
+        if (meta.trade_count_base > 0) activeIds.add(id);
+      });
+    }
+
     state.filteredMembers = (state.members || []).filter((member) => {
       const matchesSearch = !searchText ||
         `${member.display_name} ${member.username}`.toLocaleLowerCase("es").includes(searchText);
-      const matchesActivity = activityDays === 0 ? true : activeIds.has(member.discord_user_id);
+
+      const showEveryoneForAllHistory = activityDays === 0 && activityType === "all";
+      const matchesActivity = showEveryoneForAllHistory ? true : activeIds.has(member.discord_user_id);
       return matchesSearch && matchesActivity;
     });
+  }
+
+  function totalTradesForMember(userId) {
+    const id = String(userId || "");
+    const meta = memberTradeMeta.get(id) || { trade_count_base: 0, trade_synced_at: null };
+    const cutoff = meta.trade_synced_at ? new Date(meta.trade_synced_at).getTime() : null;
+
+    const newTradeQuantity = eventsSource().reduce((sum, event) => {
+      if (event.helper_id !== id || event.reason !== "safe_exchange") return sum;
+      if (cutoff !== null && new Date(event.created_at).getTime() <= cutoff) return sum;
+      return sum + event.quantity;
+    }, 0);
+
+    return meta.trade_count_base + newTradeQuantity;
   }
 
   function installControls() {
@@ -168,13 +223,15 @@
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       const last = memberEvents[0];
       const active14 = last ? isWithinDays(last.created_at, 14) : false;
-      const trades = memberEvents.filter((event) => event.reason === "safe_exchange").length;
+      const trades = totalTradesForMember(id);
 
       const line = document.createElement("small");
       line.className = `staff-last-activity ${active14 ? "is-active" : "is-inactive"}`;
       line.textContent = last
         ? `${active14 ? "● Activo" : "○ Inactivo"} · última actividad ${formatRelativeTime(last.created_at)} · ${trades} trade${trades === 1 ? "" : "s"}`
-        : "○ Sin actividad registrada";
+        : trades
+          ? `○ Sin actividad reciente · ${trades} trade${trades === 1 ? "" : "s"} históricos`
+          : "○ Sin actividad registrada";
       meta.appendChild(line);
     });
   }
@@ -192,6 +249,16 @@
     };
     const period = activityDays ? `${activityDays} días` : "todo el historial";
     summary.textContent = `${state.filteredMembers.length} de ${state.members.length} miembros · ${labels[activityType]} · ${period}`;
+  }
+
+  function normalizePositiveInt(value) {
+    const number = Number(value ?? 1);
+    return Number.isInteger(number) && number > 0 ? number : 1;
+  }
+
+  function normalizeNonNegativeInt(value) {
+    const number = Number(value ?? 0);
+    return Number.isInteger(number) && number >= 0 ? number : 0;
   }
 
   function installStyles() {
