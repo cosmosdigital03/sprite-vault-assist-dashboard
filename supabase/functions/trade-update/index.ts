@@ -5,17 +5,19 @@ Deno.serve(async (request) => {
     return json({ error: "Method not allowed" }, 405);
   }
 
-  const expectedSecret = Deno.env.get("BOTGHOST_SECRET");
-  const providedSecret = request.headers.get("x-botghost-secret");
-  if (!expectedSecret || providedSecret !== expectedSecret) {
-    return json({ error: "Unauthorized" }, 401);
-  }
-
   let payload: Record<string, unknown>;
   try {
     payload = await request.json();
   } catch {
     return json({ error: "Invalid JSON" }, 400);
+  }
+
+  const expectedSecret = Deno.env.get("BOTGHOST_SECRET") ?? "";
+  const bodySecret = text(payload.botghost_secret);
+  const headerSecret = text(request.headers.get("x-botghost-secret"));
+
+  if (!expectedSecret || (bodySecret !== expectedSecret && headerSecret !== expectedSecret)) {
+    return json({ error: "Unauthorized" }, 401);
   }
 
   const traderId = text(payload.trader_id ?? payload.helper_id);
@@ -34,13 +36,26 @@ Deno.serve(async (request) => {
     return json({ error: "A member cannot trade with themselves" }, 400);
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceRoleKey) {
-    return json({ error: "Server configuration is incomplete" }, 500);
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+
+  let secretKeys: Record<string, string> = {};
+  try {
+    secretKeys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}") as Record<string, string>;
+  } catch {
+    secretKeys = {};
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  const adminKey =
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    secretKeys.default ||
+    Object.values(secretKeys)[0] ||
+    "";
+
+  if (!supabaseUrl || !adminKey) {
+    return json({ error: "Supabase server configuration is incomplete" }, 500);
+  }
+
+  const supabase = createClient(supabaseUrl, adminKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
@@ -53,8 +68,8 @@ Deno.serve(async (request) => {
     .maybeSingle();
 
   if (lookupError) {
-    console.error(lookupError);
-    return json({ error: "Could not verify trader" }, 500);
+    console.error("Trade member lookup error:", lookupError);
+    return json({ error: "Could not verify trader", details: lookupError.message }, 500);
   }
 
   if (!existingMember) {
@@ -71,8 +86,8 @@ Deno.serve(async (request) => {
       });
 
     if (insertMemberError) {
-      console.error(insertMemberError);
-      return json({ error: "Could not create trader profile" }, 500);
+      console.error("Trade member insert error:", insertMemberError);
+      return json({ error: "Could not create trader profile", details: insertMemberError.message }, 500);
     }
   } else {
     const { error: updateMemberError } = await supabase
@@ -86,8 +101,8 @@ Deno.serve(async (request) => {
       .eq("discord_user_id", traderId);
 
     if (updateMemberError) {
-      console.error(updateMemberError);
-      return json({ error: "Could not refresh trader profile" }, 500);
+      console.error("Trade member update error:", updateMemberError);
+      return json({ error: "Could not refresh trader profile", details: updateMemberError.message }, 500);
     }
   }
 
@@ -100,12 +115,13 @@ Deno.serve(async (request) => {
       giver_id: partnerId || null,
       giver_name: partnerName,
       reason: "safe_exchange",
+      quantity: 1,
       created_at: now
     }, { onConflict: "external_event_id", ignoreDuplicates: true });
 
   if (eventError) {
-    console.error(eventError);
-    return json({ error: "Could not record trade" }, 500);
+    console.error("Trade event error:", eventError);
+    return json({ error: "Could not record trade", details: eventError.message }, 500);
   }
 
   const { count, error: countError } = await supabase
@@ -114,13 +130,15 @@ Deno.serve(async (request) => {
     .eq("helper_id", traderId)
     .eq("reason", "safe_exchange");
 
-  if (countError) console.error(countError);
+  if (countError) console.error("Trade count error:", countError);
 
   return json({
     ok: true,
     trader_id: traderId,
     trade_count: count ?? null,
-    points_changed: false
+    points_changed: false,
+    reason: "safe_exchange",
+    quantity: 1
   }, 200);
 });
 
