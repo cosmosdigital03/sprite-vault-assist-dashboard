@@ -38,6 +38,10 @@ window.addEventListener("load", async () => {
       "staff-activity-filters.js?v=20260809-trade-activity",
       "staff-activity-filters"
     );
+    await loadExtension(
+      "trade-sync-dashboard.js?v=20260810-synced-trades",
+      "trade-sync-dashboard"
+    );
   } catch (error) {
     console.error("No se pudieron cargar las mejoras del dashboard:", error);
   }
