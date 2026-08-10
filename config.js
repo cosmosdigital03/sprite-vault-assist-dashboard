@@ -35,11 +35,11 @@ window.addEventListener("load", async () => {
       "founder-dashboard"
     );
     await loadExtension(
-      "staff-activity-filters.js?v=20260809-trade-activity",
+      "staff-activity-filters.js?v=20260810-synced-trade-filters",
       "staff-activity-filters"
     );
     await loadExtension(
-      "trade-sync-dashboard.js?v=20260810-synced-trades",
+      "trade-sync-dashboard.js?v=20260810-synced-trades-v2",
       "trade-sync-dashboard"
     );
   } catch (error) {
