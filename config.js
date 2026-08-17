@@ -8,7 +8,7 @@ window.SPRITE_VAULT_CONFIG = {
   RECENT_ACTIVITY_LIMIT: 8,
 
   // Password is stored as a SHA-256 digest instead of plain text.
-  ACCESS_PASSWORD_HASH: "bd4da46b6344e6a97d9f5159ca81f39bd7fe52e1b2c7adc249db3111270a7269",
+  ACCESS_PASSWORD_HASH: "f7be4511edbcd33b965625d37441d79f69e1af947ed511e53c8b7153e23cc55e",
   ACCESS_SESSION_HOURS: 8
 };
 
